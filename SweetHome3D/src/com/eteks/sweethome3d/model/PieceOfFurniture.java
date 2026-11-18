@@ -29,6 +29,8 @@ public interface PieceOfFurniture {
   /**
    * Returns the name of this piece of furniture.
    */
+  public abstract float getVolume();
+
   public abstract String getName();
 
   /**

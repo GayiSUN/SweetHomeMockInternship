@@ -256,6 +256,7 @@ public class HomeController implements Controller {
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_WIDTH, true);
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_HEIGHT, true);
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_DEPTH, true);
+    homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_VOLUME, true);
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_X, true);
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_Y, true);
     homeView.setEnabled(HomeView.ActionType.SORT_HOME_FURNITURE_BY_ELEVATION, true);
@@ -276,7 +277,8 @@ public class HomeController implements Controller {
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_NAME, true); 
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_WIDTH, true); 
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_DEPTH, true); 
-    homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_HEIGHT, true); 
+    homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_HEIGHT, true);
+    homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_VOLUME, true);
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_X, true); 
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_Y, true); 
     homeView.setEnabled(HomeView.ActionType.DISPLAY_HOME_FURNITURE_ELEVATION, true); 
@@ -2522,6 +2524,8 @@ public class HomeController implements Controller {
       ThreadedTaskController.ExceptionHandler exceptionHandler = 
           new ThreadedTaskController.ExceptionHandler() {
             public void handleException(Exception ex) {
+              ex.printStackTrace();
+
               if (!(ex instanceof InterruptedRecorderException)) {
                 if (ex instanceof RecorderException) {
                   String message = preferences.getLocalizedString(
@@ -2555,6 +2559,7 @@ public class HomeController implements Controller {
       ThreadedTaskController.ExceptionHandler exceptionHandler = 
           new ThreadedTaskController.ExceptionHandler() {
             public void handleException(Exception ex) {
+              ex.printStackTrace();
               if (!(ex instanceof InterruptedRecorderException)) {
                 if (ex instanceof RecorderException) {
                   String message = preferences.getLocalizedString(

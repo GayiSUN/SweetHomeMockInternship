@@ -123,7 +123,7 @@ import com.eteks.sweethome3d.viewcontroller.View;
  * @author Emmanuel Puybaret
  */
 public class FurnitureTable extends JTable implements View, Printable {
-  private static final String EXPANDED_ROWS_VISUAL_PROPERTY = "com.eteks.sweethome3d.SweetHome3D.ExpandedGroups";
+    private static final String EXPANDED_ROWS_VISUAL_PROPERTY = "com.eteks.sweethome3d.SweetHome3D.ExpandedGroups";
 
   private UserPreferences        preferences;
   private ListSelectionListener  tableSelectionListener;
@@ -576,11 +576,11 @@ public class FurnitureTable extends JTable implements View, Printable {
   }
 
   /**
-   * Adds <code>PropertyChange</code> and {@link FurnitureListener FurnitureListener} listeners 
+   * Adds property change and furniture collection listeners
    * to home to update furniture sort in table when <code>furnitureSortedProperty</code>, 
    * <code>furnitureAscendingSorted</code> or furniture in <code>home</code> changes.
    */
-  private void addHomeListener(final Home home, 
+    private void addHomeListener(final Home home,
                                final FurnitureController controller) {
     PropertyChangeListener sortListener = 
       new PropertyChangeListener () {
@@ -750,10 +750,31 @@ public class FurnitureTable extends JTable implements View, Printable {
           return headerRendererLabel;
         }
       };
-    for (int columnIndex = 0, n = columnModel.getColumnCount(); columnIndex < n; columnIndex++) {
-      final TableColumn tableColumn = columnModel.getColumn(columnIndex);
+//    for (int columnIndex = 0, n = columnModel.getColumnCount(); columnIndex < n; columnIndex++) {
+//      final TableColumn tableColumn = columnModel.getColumn(columnIndex);
       // Create a printable column from existing table column
-      TableColumn printableColumn = new TableColumn();
+    List<TableColumn> printedColumns = new ArrayList<TableColumn>();
+    boolean hasLevel = false;
+
+    for (int i = 0; i < columnModel.getColumnCount(); i++) {
+      TableColumn column = columnModel.getColumn(i);
+      printedColumns.add(column);
+
+      if (column.getIdentifier()
+              == HomePieceOfFurniture.SortableProperty.LEVEL) {
+        hasLevel = true;
+      }
+    }
+
+    if (!hasLevel) {
+      printedColumns.add(
+              ((FurnitureTableColumnModel)columnModel).availableColumns.get(
+                      HomePieceOfFurniture.SortableProperty.LEVEL));
+    }
+
+    for (final TableColumn tableColumn : printedColumns) {
+
+    TableColumn printableColumn = new TableColumn();
       printableColumn.setIdentifier(tableColumn.getIdentifier());
       printableColumn.setHeaderValue(tableColumn.getHeaderValue());
       TableCellRenderer printableCellRenderer = new TableCellRenderer() {
@@ -793,20 +814,28 @@ public class FurnitureTable extends JTable implements View, Printable {
     if (EventQueue.isDispatchThread()) {
       TableColumnModel oldColumnModel = getColumnModel();
       Color oldGridColor = getGridColor();
-      setColumnModel(printableColumnModel);   
-      if (OperatingSystem.isWindows()) {
-        // Add 3 pixels to columns to get a correct rendering
-        updateTableColumnsWidth(3);
-      } else {
-        updateTableColumnsWidth(0);
+
+      try {
+        setColumnModel(printableColumnModel);
+
+        if (OperatingSystem.isWindows()) {
+          updateTableColumnsWidth(3);
+        } else {
+          updateTableColumnsWidth(0);
+        }
+
+        setGridColor(gridColor);
+
+        Printable printable =
+                getPrintable(PrintMode.FIT_WIDTH, null, null);
+
+        return printable.print(g, pageFormat, pageIndex);
+
+      } finally {
+        setColumnModel(oldColumnModel);
+        setGridColor(oldGridColor);
       }
-      setGridColor(gridColor);
-      Printable printable = getPrintable(PrintMode.FIT_WIDTH, null, null);
-      int pageExists = printable.print(g, pageFormat, pageIndex);
-      // Restore column model and grid color to their previous values
-      setColumnModel(oldColumnModel);
-      setGridColor(oldGridColor);
-      return pageExists;
+
     } else {
       // Print synchronously table in Event Dispatch Thread
       // The best solution should be to be able to print out of Event Dispatch Thread
@@ -920,6 +949,9 @@ public class FurnitureTable extends JTable implements View, Printable {
             break;
           case HEIGHT : 
             writer.write(sizeFormat.format(copiedPiece.getHeight()));
+            break;
+          case VOLUME :
+            writer.write(sizeFormat.format(copiedPiece.getVolume()));
             break;
           case X : 
             writer.write(sizeFormat.format(copiedPiece.getX()));
@@ -1130,6 +1162,8 @@ public class FurnitureTable extends JTable implements View, Printable {
           return preferences.getLocalizedString(FurnitureTable.class, "depthColumn");
         case HEIGHT : 
           return preferences.getLocalizedString(FurnitureTable.class, "heightColumn");
+        case VOLUME :
+          return preferences.getLocalizedString(FurnitureTable.class, "volumeColumn");
         case X : 
           return preferences.getLocalizedString(FurnitureTable.class, "xColumn");
         case Y :
@@ -1173,7 +1207,8 @@ public class FurnitureTable extends JTable implements View, Printable {
           return 120; 
         case WIDTH :
         case DEPTH :
-        case HEIGHT : 
+        case HEIGHT :
+        case VOLUME :
         case X : 
         case Y :
         case ELEVATION : 
@@ -1215,6 +1250,8 @@ public class FurnitureTable extends JTable implements View, Printable {
           return getSizeRenderer(HomePieceOfFurniture.SortableProperty.DEPTH, preferences);
         case HEIGHT : 
           return getSizeRenderer(HomePieceOfFurniture.SortableProperty.HEIGHT, preferences);
+        case VOLUME :
+          return getSizeRenderer(HomePieceOfFurniture.SortableProperty.VOLUME, preferences);
         case X : 
           return getSizeRenderer(HomePieceOfFurniture.SortableProperty.X, preferences);
         case Y :
@@ -1336,9 +1373,19 @@ public class FurnitureTable extends JTable implements View, Printable {
               @Override
               public Component getTableCellRendererComponent(JTable table, 
                   Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                return super.getTableCellRendererComponent(table, 
-                    value != null  ? ((HomePieceOfFurniture)value).getHeight()  : null, 
-                    isSelected, hasFocus, row, column);
+                return super.getTableCellRendererComponent(table,
+                        value != null ? ((HomePieceOfFurniture) value).getHeight() : null,
+                        isSelected, hasFocus, row, column);
+              }
+            };
+        case VOLUME :
+          return new SizeRenderer() {
+              @Override
+              public Component getTableCellRendererComponent(JTable table,
+                    Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                return super.getTableCellRendererComponent(table,
+                        value != null ? ((HomePieceOfFurniture) value).getVolume() : null,
+                        isSelected, hasFocus, row, column);
               }
             };
         case X :
